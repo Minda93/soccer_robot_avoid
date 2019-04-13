@@ -19,8 +19,9 @@ import math
 import os
 import numpy as np
 import pickle
+import threading
 
-PACKAGE_PATH = rospkg.RosPack().get_path('nubot_strategy')+'/avoid_tf/'
+PACKAGE_PATH = rospkg.RosPack().get_path('nubot_strategy')+'/avoid/'
 
 
 class PlayGame(object):
@@ -85,7 +86,7 @@ class PlayGame(object):
         self.expl_noise = 0
 
         # whether or not models are trained
-        self.train = True
+        self.train = False
 
         # whether or not models are saved
         self.save_models = True
@@ -256,7 +257,7 @@ class PlayGame(object):
         return True
 
 def main():
-    rospy.init_node('nubot_avoid_td3', anonymous=True)
+    rospy.init_node('nubot_avoid', anonymous=True)
     game = PlayGame()
 
     game.Play()
