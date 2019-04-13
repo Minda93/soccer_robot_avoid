@@ -1,8 +1,0 @@
-prefix=/home/minda/Minda/github/soccer_robot_avoid/devel
-
-Name: nubot_description
-Description: Description of nubot_description
-Version: 1.0.0
-Cflags: 
-Libs: -L/home/minda/Minda/github/soccer_robot_avoid/devel/lib 
-Requires: gazebo_ros

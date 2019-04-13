@@ -1,2 +1,0 @@
-ros_gazebo/nubot/nubot_common:ros_gazebo/nubot/nubot_description:ros_gazebo/nubot/nubot_gazebo
--DCATKIN_DEVEL_PREFIX=/home/minda/Minda/github/soccer_robot_avoid/devel -DCMAKE_INSTALL_PREFIX=/home/minda/Minda/github/soccer_robot_avoid/install -G Unix Makefiles

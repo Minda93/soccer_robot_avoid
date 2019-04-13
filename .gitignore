@@ -1,0 +1,13 @@
+build/
+devel/
+.catkin_workspace
+.vscode/
+*.pyc
+
+*.swp
+*.pcd
+*weights
+*.h5
+
+CATKIN_IGNORE
+
