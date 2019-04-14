@@ -1,0 +1,6 @@
+model_checkpoint_path: "/home/minda/Minda/github/soccer_robot_avoid/src/nubot_strategy/avoid/config/sac/model_1/3000/sac_0_Model.ckpt"
+all_model_checkpoint_paths: "/home/minda/Minda/github/soccer_robot_avoid/src/nubot_strategy/avoid/config/sac/model_1/2200/sac_0_Model.ckpt"
+all_model_checkpoint_paths: "/home/minda/Minda/github/soccer_robot_avoid/src/nubot_strategy/avoid/config/sac/model_1/2400/sac_0_Model.ckpt"
+all_model_checkpoint_paths: "/home/minda/Minda/github/soccer_robot_avoid/src/nubot_strategy/avoid/config/sac/model_1/2600/sac_0_Model.ckpt"
+all_model_checkpoint_paths: "/home/minda/Minda/github/soccer_robot_avoid/src/nubot_strategy/avoid/config/sac/model_1/2800/sac_0_Model.ckpt"
+all_model_checkpoint_paths: "/home/minda/Minda/github/soccer_robot_avoid/src/nubot_strategy/avoid/config/sac/model_1/3000/sac_0_Model.ckpt"
