@@ -13,9 +13,7 @@ from gazebo_msgs.msg import ModelStates
 
 """ tool """
 import math
-import os
 import numpy as np
-import pickle
 import threading
 
 PACKAGE_PATH = rospkg.RosPack().get_path('nubot_strategy')+'/avoid/'
@@ -49,8 +47,11 @@ class Obstacle(object):
         if(self.move_way == 'vertical'):
             x = self.init_pos[0] + self.move*self.move_dis
             y = self.init_pos[1]
-
-        self.Set_Goal(x,y)
+            self.Set_Goal(x,y)
+        elif(self.move_way == 'horizon'):
+            x = self.init_pos[0] 
+            y = self.init_pos[1] + self.move*self.move_dis
+            self.Set_Goal(x,y)
 
     def Set_Pos(self,pos):
         self.pos[0] = pos[0]
@@ -69,14 +70,21 @@ class Obstacle(object):
         self.pub_cmdvel.publish(velcmd)
     
     """ reset """
-    def Reset(self,pos):
+    def Reset(self,pos,way):
         self.Init_State(pos)
+        self.move_way = way
         self.Pub_Cmdvel([0,0,0])
 
     """ move """
     def Move(self,scalar = 25):
         if(self.move_way == 'vertical'):
             vec = self.Move_Vertical(scalar)
+        elif(self.move_way == 'horizon'):
+            vec = self.Move_Horizon(scalar)
+        elif(self.move_way == 'rotate'):
+            if(scalar > 10):
+                scalar = 10
+            vec = [0,0,scalar]
         
         self.Pub_Cmdvel(vec)
     
@@ -92,18 +100,38 @@ class Obstacle(object):
             y = self.init_pos[1]
             self.Set_Goal(x,y)
         
-        x = self.move*scalar
-        y = 0
+        vx = self.move*scalar
+        vy = 0
         w = 0
 
-        return [x,y,w]
+        return [vx,vy,w]
+    
+    def Move_Horizon(self,scalar):
+        if(self.pos[1] > self.goal[1] and self.move > 0):
+            self.move = -self.move
+            x = self.init_pos[0] 
+            y = self.init_pos[1] + self.move*self.move_dis
+            self.Set_Goal(x,y)
+        elif(self.pos[1] < self.goal[1] and self.move < 0):
+            self.move = -self.move
+            x = self.init_pos[0] 
+            y = self.init_pos[1] + self.move*self.move_dis
+            self.Set_Goal(x,y)
+        
+        vx = 0
+        vy = self.move*scalar
+        w = 0
+
+        return [vx,vy,w]
 
     """ tool """
     def Cal_Dis(self):
         return np.hypot(*(self.init_pos - self.pos))
     
 class Env(object):
-    def __init__(self,num):
+    def __init__(self,num,seed = 2):
+        np.random.seed(seed)
+
         """ obstacle """
         self.obstacle_num = num
         self.obstacles = {}
@@ -111,7 +139,9 @@ class Env(object):
         
         for i in range(1,num+1):
             name = 'obstacle_{}'.format(i)
-            self.obstacles[name] = Obstacle(i,[0,0],way[0])
+            choose = np.random.randint(3213)%3
+            print(choose)
+            self.obstacles[name] = Obstacle(i,[0,0],way[choose])
         
         self.Init_Env()
 
@@ -151,7 +181,7 @@ class Env(object):
 
 def main():
     rospy.init_node('dynamic_env', anonymous=True)
-    env = Env(2)
+    env = Env(num = 5,seed = 0)
 
     env.Start()
 
