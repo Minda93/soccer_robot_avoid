@@ -96,7 +96,7 @@ class PlayGame(object):
         self.load_buffer_episode = 3000
         
         # whether or not models are Loaded
-        self.load_models = False
+        self.load_models = True
 
         # random
         self.random_robot = True
@@ -104,8 +104,8 @@ class PlayGame(object):
 
         # load file_name
         load_model = 'model_1'
-        seed = 9
-        load_episode = 1600
+        seed = 0
+        load_episode = 3000
         self.load_path =  PACKAGE_PATH+"config/{}/{}/{}/".format(self.policy_name,load_model,load_episode)
         self.load_file_name = "{}_{}".format(self.policy_name,seed)
         self.load_buffer_path = "./config/{}/{}/".format(self.policy_name,load_model)
@@ -146,7 +146,7 @@ class PlayGame(object):
             for step in range(1,self.max_timesteps+1):
                 total_timesteps += 1
                 # print(total_timesteps)
-                action = self.policy.Select_Action(state)
+                action = self.policy.Select_Action(state,self.train)
 
                 # print(action,end="")
                 if(self.expl_noise != 0):

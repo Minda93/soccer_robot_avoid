@@ -3,7 +3,7 @@ devel/
 .catkin_workspace
 .vscode/
 *.pyc
-
+*.pickle
 *.swp
 *.pcd
 *weights

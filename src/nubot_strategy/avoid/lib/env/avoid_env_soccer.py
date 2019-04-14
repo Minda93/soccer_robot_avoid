@@ -138,8 +138,8 @@ class NubotAvoidEnv(RobotGazeboEnv):
             # random
             x,y,angle = self.Random_Pose('robot')
             self.robot['pos'] = [x,y,0.01]
-            self.robot['ang'] = angle
-            # self.robot['ang'] = -180.0
+            # self.robot['ang'] = angle
+            self.robot['ang'] = -180.0
             models.append([x,y])
 
             self.Set_Model(self.robot['name'],self.robot['pos'],self.robot['ang'])
@@ -360,9 +360,9 @@ class NubotAvoidEnv(RobotGazeboEnv):
         # print("reward",reward)
 
         """ reward 3 120 is better"""
-        # reward = -dis/40.0
+        reward = -dis/40.0
         # 120
-        # reward += round(4.76*(1.05-abs(obs[4]-action[1])),2)
+        reward += round(4.76*(1.05-abs(obs[4]-action[1])),2)
 
         # 270
         # reward += round(2.12*(2.36-abs(obs[4]-action[1])),2)
@@ -375,9 +375,9 @@ class NubotAvoidEnv(RobotGazeboEnv):
         # reward = - dis - 1.0
 
         """ reward 6 """
-        reward = (-dis - 1.0)
-        reward += round(4.76*(1.05-abs(obs[4]-action[1])),2)
-        reward += 3*(self.Cal_Scan_Reward(obs,action)/len(obs[7:]))
+        # reward = (-dis - 1.0)
+        # reward += round(4.76*(1.05-abs(obs[4]-action[1])),2)
+        # reward += 3*(self.Cal_Scan_Reward(obs,action)/len(obs[7:]))
         
         if(info == 'goal' and self.goal_count >= 50):
             reward += 100.

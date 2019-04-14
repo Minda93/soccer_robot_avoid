@@ -65,7 +65,7 @@ class SAC(object):
         self.reward = tf.placeholder(tf.float32, [None,], name="reward")
         self.done = tf.placeholder(tf.float32, [None,], name="done")
 
-        mu, self.pi, logp_pi = self.actor.Eualuate(self.state)
+        self.mu, self.pi, logp_pi = self.actor.Eualuate(self.state)
 
         """ get value """
         q1_value = self.critic_Q1.Get_Q_Value(self.state,self.action)
@@ -115,9 +115,12 @@ class SAC(object):
         self.sess.run(tf.global_variables_initializer())
         self.sess.run(target_init)
 
-    def Select_Action(self,state):
-        action = self.sess.run(self.pi,feed_dict={self.state: state.reshape(1, -1)})
-        action = np.squeeze(action, axis=1)
+    def Select_Action(self,state,train):
+        if(train):
+            action = self.sess.run(self.pi,feed_dict={self.state: state.reshape(1, -1)})
+            action = np.squeeze(action, axis=1)
+        else:
+            action = self.sess.run(self.mu,feed_dict={self.state: state.reshape(1, -1)})
         return action
     
     def Train(self,replay_buffer,iterations,episode = 0):
