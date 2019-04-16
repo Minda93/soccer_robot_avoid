@@ -47,7 +47,7 @@ class SAC(object):
 
         """ discount """
         self.gamma = 0.99
-        self.alpha = 0.3
+        self.alpha = 0.2
 
         """ learning rate """
         self.lr_a = 0.001
@@ -118,9 +118,12 @@ class SAC(object):
     def Select_Action(self,state,train):
         if(train):
             action = self.sess.run(self.pi,feed_dict={self.state: state.reshape(1, -1)})
-            action = np.squeeze(action, axis=1)
+            # action = np.squeeze(action, axis=1)
+            action = np.reshape(action,(self.action_dim,))
         else:
             action = self.sess.run(self.mu,feed_dict={self.state: state.reshape(1, -1)})
+            # action = np.squeeze(action, axis=1)
+            action = np.reshape(action,(self.action_dim,))
         return action
     
     def Train(self,replay_buffer,iterations,episode = 0):
