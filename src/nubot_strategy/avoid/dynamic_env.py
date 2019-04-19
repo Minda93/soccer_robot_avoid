@@ -8,7 +8,7 @@ import rospy
 import rospkg
 from nubot_common.msg import VelCmd
 from gazebo_msgs.msg import ModelStates
-
+from std_srvs.srv import Empty,EmptyResponse
 """ lib """
 
 """ tool """
@@ -70,8 +70,7 @@ class Obstacle(object):
         self.pub_cmdvel.publish(velcmd)
     
     """ reset """
-    def Reset(self,pos,way):
-        self.Init_State(pos)
+    def Reset(self,way):
         self.move_way = way
         self.Pub_Cmdvel([0,0,0])
 
@@ -135,18 +134,29 @@ class Env(object):
         """ obstacle """
         self.obstacle_num = num
         self.obstacles = {}
-        way = ['vertical','horizon','rotate','vec']
+        self.way = ['vertical','horizon','rotate','vec']
         
         for i in range(1,num+1):
             name = 'obstacle_{}'.format(i)
             choose = np.random.randint(3213)%3
-            print(choose)
-            self.obstacles[name] = Obstacle(i,[0,0],way[choose])
+            self.obstacles[name] = Obstacle(i,[0,0],self.way[choose])
         
         self.Init_Env()
 
         """ sub """
         rospy.Subscriber("gazebo/model_states",ModelStates,self.Sub_Info)
+
+        """ server """
+        self.reset = rospy.Service('dynamic_env/reset', Empty, self.Reset)
+    
+    def Reset(self,req):
+        for i in range(1,self.obstacle_num+1):
+            name = 'obstacle_{}'.format(i)
+            choose = np.random.randint(3213)%3
+            self.obstacles[name].Reset(self.way[choose])
+        self.Init_Env()
+        
+        return EmptyResponse()
 
     def Init_Env(self):
         msg = None
