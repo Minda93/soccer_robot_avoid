@@ -8,6 +8,6 @@ devel/
 *.pcd
 *weights
 *.h5
-
+config/
 CATKIN_IGNORE
 
