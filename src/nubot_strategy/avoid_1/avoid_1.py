@@ -26,7 +26,7 @@ class PlayGame(object):
         self.Init_Param()
 
         """ define action """
-        self.Define_Action(r_info=9,s_info=120,a_info='linear')
+        self.Define_Action(r_info=9,s_info=180,a_info='linear')
 
         """ Build env """
         self.Build_Env(robot = 'nubot1',choose = 2,a_info='linear',dynamic = False)
@@ -44,10 +44,16 @@ class PlayGame(object):
 
     def Init_Param(self):
         # """ policy name """
-        self.policy_name = "sac_5"
+        self.policy_name = "sac_7"
+
+        # scan have scan(t-1) choose current pre
+        self.scan_info = 'current'
+
+        # """ action normalize """
+        self.action_normalize = False
 
         # """ Set env and numpy seeds """
-        self.seed = 7
+        self.seed = 17
 
         # """ buffer size """
         self.buffer_size = 1000000
@@ -62,8 +68,10 @@ class PlayGame(object):
         self.eval_freq = 1000
 
         # """ How many time steps purely random policy is run for """
-        # self.start_timesteps = 10000
-        self.start_timesteps = 256*5
+        # self.start_timesteps = 15000
+        self.start_timesteps = 10000
+        # self.start_timesteps = 256*5
+        # self.start_timesteps = 0
     
         # Max time steps to run environment for
         self.max_timesteps = 1000
@@ -71,6 +79,7 @@ class PlayGame(object):
         # Max episode to run environment for
         self.max_episodes = 10000
         # self.max_episodes = 100
+        # self.max_episodes = 20
 
         # """ Std of Gausssian exploration noise """
         self.expl_noise = 0
@@ -82,7 +91,7 @@ class PlayGame(object):
         self.load_models = True
 
         # """ whether or not robot's route are saved """
-        self.save_route = True
+        self.save_route = False
 
         # """ whether or not buffer are Loaded """
         self.load_buffer = False
@@ -107,16 +116,16 @@ class PlayGame(object):
         # """ file processing """
         # Load model
         if(self.load_models):
-            load_model = 'model_2'
-            seed = 7
-            load_episode = 3100
+            load_model = 'model_15'
+            seed = 6
+            load_episode = 10000
             self.load_path =  PACKAGE_PATH+\
                 "config/{}/{}/{}/".format(self.policy_name,load_model,load_episode)
 
             self.load_file_name = "{}_{}".format(self.policy_name,seed)
 
         # Save model
-        output_model = "model_5"
+        output_model = "model_16"
         self.save_path = PACKAGE_PATH+\
             "config/{}/{}/".format(self.policy_name,output_model)
 
@@ -125,8 +134,8 @@ class PlayGame(object):
 
         # load buffer
         if(self.load_buffer):
-            load_buffer_model = "model_2"
-            self.load_buffer_episode = 0
+            load_buffer_model = "model_15"
+            self.load_buffer_episode = 10000
             self.load_buffer_path = PACKAGE_PATH+\
                 "config/{}/{}/".format(self.policy_name,load_buffer_model)
 
@@ -168,6 +177,7 @@ class PlayGame(object):
             self.env = NubotAvoidEnv(robot_name = robot,\
                                      state_dim = self.state_dim,\
                                      action_dim = self.action_dim,\
+                                     scan_info = self.scan_info,\
                                      a_info = a_info,\
                                      dynamic = dynamic,\
                                      seed = self.seed,\
@@ -176,9 +186,14 @@ class PlayGame(object):
     def Build_Policy(self):     
         if(self.policy_name == 'sac_5'):
             from lib.network.sac_5.sac import SAC
+            self.policy = SAC(self.state_dim,self.action_dim,self.action_bound,self.save_path)
+        elif(self.policy_name == 'sac_6'):
+            from lib.network.sac_6.sac import SAC
+            self.policy = SAC(self.state_dim,self.scan_info,self.action_dim,self.action_bound,self.save_path)
+        elif(self.policy_name == 'sac_7'):
+            from lib.network.sac_7.sac import SAC
+            self.policy = SAC(self.state_dim,self.action_dim,self.action_bound,self.save_path)
   
-        self.policy = SAC(np.sum(self.state_dim),self.action_dim,self.action_bound,self.save_path)
-        
         if(self.load_models):
             self.policy.Load(self.load_path,self.load_file_name)
     
@@ -196,6 +211,7 @@ class PlayGame(object):
         episode_reward = 0
 
         good_log = 0
+        good_step_log = 0
         bad_log = 0
 
         """ training procedure """
@@ -209,9 +225,11 @@ class PlayGame(object):
             for step in range(1,self.max_timesteps+1):
                 self.env.Store_Buffer(self.replay_buffer)
                 total_timesteps += 1
-        
-                action = self.policy.Select_Action(state,self.train)
 
+                if(total_timesteps > self.start_timesteps):
+                    action = self.policy.Select_Action(state,self.train)
+                else:
+                    action = self.policy.Select_Action(state,True)
                 """ add noise """
                 if(self.expl_noise != 0):
                     noise = np.random.normal(0,self.expl_noise,size=self.action_dim)
@@ -231,7 +249,10 @@ class PlayGame(object):
 
                 avg_reward += reward
                 episode_reward += reward
-
+                
+                """ normallize """
+                if(self.action_normalize):
+                    action = np.true_divide(action,self.action_bound)
                 """ store """
                 self.replay_buffer.Add(state,\
                                        np.reshape(action,(self.action_dim,)),\
@@ -243,8 +264,7 @@ class PlayGame(object):
 
                 if(self.train):
                     if(total_timesteps > self.start_timesteps):
-                        if(step % 2 == 0):
-                            self.policy.Train(self.replay_buffer,total_timesteps-self.start_timesteps)
+                        self.policy.Train(self.replay_buffer,total_timesteps-self.start_timesteps)
 
                 if(done or step == (self.max_timesteps - 1) or\
                    info == 'bump' or info == 'over range'):
@@ -272,6 +292,16 @@ class PlayGame(object):
 
                     if(info == 'goal'):
                         good_log += 1
+                    #     good_step_log += 1
+                    #     if(good_step_log >= 5):
+                    #         self.reset_flag = 3
+                    #         good_step_log = 0
+                    #     else:
+                    #         self.reset_flag = 4
+                    # else:
+                    #     self.reset_flag = 3
+                    #     good_step_log = 0
+                    
                     # self.reset_flag = 6
 
                     break
@@ -307,9 +337,11 @@ class PlayGame(object):
 
         if(self.train):   
             self.Save(episode)
-            self.Save_Replay_Buffer(episode)
+            # self.Save_Replay_Buffer(episode)
         else:
             # self.Save_Replay_Buffer(episode)
+            if(self.save_route):
+                self.env.Save_Log(self.save_path)
             pass
 
     """ tool """
@@ -327,6 +359,7 @@ class PlayGame(object):
         if(self.check_save_path):
             with open(self.save_path+"rb_{}.pickle".format(episode),'wb') as f:
                 pickle.dump(self.replay_buffer.buffer,f)
+            print("finish save buffer")
         else:
             print("not find path")
     
