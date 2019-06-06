@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3tf.global_variables('Q_value1')
 # -*- coding: utf-8 -*-+
 
 """ ros """
@@ -24,7 +24,7 @@ r"""
 """
 
 class NubotAvoidEnv(RobotGazeboEnv):
-    def __init__(self,robot_name,state_dim,action_dim,a_info,dynamic,seed,save_route,batch_file):
+    def __init__(self,robot_name,state_dim,action_dim,scan_info,a_info,dynamic,seed,save_route,batch_file):
         super(NubotAvoidEnv,self).__init__(
             robot_name = robot_name,
             reset_world_or_sim = "SIMULATION"
@@ -32,6 +32,7 @@ class NubotAvoidEnv(RobotGazeboEnv):
 
         self.state_dim = state_dim
         self.action_dim = action_dim
+        self.scan_info = scan_info
         self.a_info = a_info
         self.dynamic = dynamic
 
@@ -82,9 +83,11 @@ class NubotAvoidEnv(RobotGazeboEnv):
         self.goal['range'] = [0.2,0.75]
 
         """ obstacles """
-        self.obstacle_num = 2
+        self.obstacle_num = 3
         
-        if(self.obstacle_num == 1):
+        if(self.obstacle_num == 0):
+            obstacles = [[]]
+        elif(self.obstacle_num == 1):
             obstacles = [[0.0,0.0]]
         elif(self.obstacle_num == 2):
             obstacles = [[0.0,0.0],[0.0,1.5]]
@@ -94,6 +97,8 @@ class NubotAvoidEnv(RobotGazeboEnv):
             obstacles = [[0.0,0.0],[0.0,1.5],[0.0,-1.5],[0.0,2.0]]
         elif(self.obstacle_num == 5):
             obstacles = [[0.0,0.0],[0.0,1.5],[0.0,-1.5],[0.0,2.0],[0.0,-2.0]]
+        elif(self.obstacle_num == 6):
+            obstacles = [[0.0,0.0],[0.0,1.5],[0.0,-1.5],[0.0,2.0],[0.0,-2.0],[1.0,0.0]]
         elif(self.obstacle_num == 8):
             obstacles = [[0.0,0.0],\
                         [0.0,1.5],\
@@ -119,6 +124,10 @@ class NubotAvoidEnv(RobotGazeboEnv):
         self.ob_range_y = [-1.77,1.77]
         self.ob_range_yaw = [-180,180]
 
+        # test
+        # self.ob_range_x = [-2.0,2.0]
+        # self.ob_range_y = [-1.5,1.5]
+
         """ range limit """
         self.range_x = [-3.0,3.1]
         self.range_y = [-2.0,2.0]
@@ -135,6 +144,9 @@ class NubotAvoidEnv(RobotGazeboEnv):
         self.start_time = time.time()
         self.pre_front = 0
         self.step = 1
+
+        if(self.scan_info == 'pre'):
+            self.pre_scan = np.ones(self.scan_dim)*2.5
     
     def Read_Train_Data(self,path):
         with open(path,'rb') as f:
@@ -155,6 +167,9 @@ class NubotAvoidEnv(RobotGazeboEnv):
             pickle.dump(self.log_robot,f)
         with open(directory+"log_path_show.pickle",'wb') as f:
             pickle.dump(self.log_robot_path,f)
+        with open(directory+"log_goal_show.pickle",'wb') as f:
+            pickle.dump(self.log_goal,f)
+        print('save_log')
 
     """ check connect """
     def _Check_All_System_Ready(self):
@@ -277,8 +292,8 @@ class NubotAvoidEnv(RobotGazeboEnv):
                 x,y,angle = self.Random_Pose('robot')
                 if(self.Check_Model_Overlapping([x,y],models) == False):
                     self.robot['pos'] = [x,y,0.01]
-                    # self.robot['ang'] = angle
-                    self.robot['ang'] = -180.0
+                    self.robot['ang'] = angle
+                    # self.robot['ang'] = -180.0
 
                     self.init_pos[0] = x
                     self.init_pos[1] = y
@@ -429,8 +444,9 @@ class NubotAvoidEnv(RobotGazeboEnv):
         done,info = self.Is_Done(obs)
         reward,info = self.Compute_Reward(obs,action_,info)
 
-        if(done and self.save_route):
+        if(self.save_route):
             self.robot_path.append(obs[:2])
+        if(done and self.save_route):
             self.log_robot_path.append(self.robot_path)
 
         return obs,reward,done,info
@@ -449,6 +465,7 @@ class NubotAvoidEnv(RobotGazeboEnv):
         # pos = np.concatenate((robot,np.array(self.goal['pos'][:2])))
         # obs = np.hstack((pos,self.nh.scan))
 
+        
         """ dis angle """
         r_pos = self.robot['pos'][:2]
         r_ang = np.array([math.radians(self.robot['ang'])])
@@ -466,8 +483,15 @@ class NubotAvoidEnv(RobotGazeboEnv):
         # add robot vec_ vec 
         robot_state = np.concatenate((robot_state,self.robot['vec_']),axis=0)
         robot_state = np.concatenate((robot_state,self.robot['vec']),axis=0)
-        
-        obs = np.hstack((robot_state,self.nh.scan))
+
+        if(self.scan_info == 'current'):
+            obs = np.hstack((robot_state,self.nh.scan))
+        elif(self.scan_info == 'pre'):
+            scan = copy.deepcopy(self.nh.scan)
+            diff_scan = scan - self.pre_scan
+            obs = np.hstack((robot_state,scan))
+            obs = np.hstack((obs,diff_scan))
+            self.pre_scan = scan
         
         # print(obs[:self.robot_dim])
         return obs
@@ -748,7 +772,10 @@ class NubotAvoidEnv(RobotGazeboEnv):
         else:
             ro_a = 0.2*((v-25)/25)+np.cos(phi)*0.3
 
-        dis_o = np.min(obs[self.robot_dim:])
+        if(self.scan_info == 'current'):
+            dis_o = np.min(obs[self.robot_dim:])
+        elif(self.scan_info == 'pre'):
+            dis_o = np.min(obs[self.robot_dim:-self.scan_dim])
         if(0.1 < dis_o <= 0.5):
             ro_s = -0.1/((dis_o - 0.13)**2+1e-6)
         else:
@@ -770,6 +797,9 @@ class NubotAvoidEnv(RobotGazeboEnv):
         self.pre_front = angle
 
         return reward,info
+
+        """ reward 5 """
+
 
         """ reward for linear yaw"""
         """ reward 1 """
@@ -815,7 +845,9 @@ class NubotAvoidEnv(RobotGazeboEnv):
         return round(x[0],3),round(y[0],3),round(angle[0])
 
     """ bug """
-    def Check_Model_Overlapping(self,pos,models,error = 0.70):
+    # def Check_Model_Overlapping(self,pos,models,error = 0.70):
+    def Check_Model_Overlapping(self,pos,models,error = 0.8):
+    # def Check_Model_Overlapping(self,pos,models,error = 1.1):
         """ method 2 """
         for item in models:
             if(math.hypot(pos[0]-item[0],pos[1]-item[1]) < error):
@@ -908,6 +940,8 @@ class NubotAvoidEnv(RobotGazeboEnv):
     
     def Store_Buffer(self,buffer):
         self.nh.Store_Buffer(buffer)
+    
+
         
         
                 
