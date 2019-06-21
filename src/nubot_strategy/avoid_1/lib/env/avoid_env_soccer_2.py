@@ -83,7 +83,7 @@ class NubotAvoidEnv(RobotGazeboEnv):
         self.goal['range'] = [0.2,0.75]
 
         """ obstacles """
-        self.obstacle_num = 3
+        self.obstacle_num = 6
         
         if(self.obstacle_num == 0):
             obstacles = [[]]
@@ -99,6 +99,14 @@ class NubotAvoidEnv(RobotGazeboEnv):
             obstacles = [[0.0,0.0],[0.0,1.5],[0.0,-1.5],[0.0,2.0],[0.0,-2.0]]
         elif(self.obstacle_num == 6):
             obstacles = [[0.0,0.0],[0.0,1.5],[0.0,-1.5],[0.0,2.0],[0.0,-2.0],[1.0,0.0]]
+        elif(self.obstacle_num == 7):
+            obstacles = [[0.0,0.0],\
+                        [0.0,1.5],\
+                        [0.0,-1.5],\
+                        [0.0,2.0],\
+                        [0.0,-2.0],\
+                        [1.0,0.0],\
+                        [1.0,1.5]]
         elif(self.obstacle_num == 8):
             obstacles = [[0.0,0.0],\
                         [0.0,1.5],\
@@ -196,8 +204,8 @@ class NubotAvoidEnv(RobotGazeboEnv):
             goal = self.Init_Goal_Pose(box)
 
             self.models = []
-            self.models.append(goal)
             self.models.append(robot)
+            self.models.append(goal)
             for item in box:
                 self.models.append(item)
         elif(reset == 6):
@@ -213,8 +221,8 @@ class NubotAvoidEnv(RobotGazeboEnv):
                 self.models[1] = goal
             else:
                 self.models = []
-                self.models.append(goal)
                 self.models.append(robot)
+                self.models.append(goal)
                 for item in box:
                     self.models.append(item)
         elif(reset == 5):
@@ -229,8 +237,8 @@ class NubotAvoidEnv(RobotGazeboEnv):
                 self.models[0] = robot
             else:
                 self.models = []
-                self.models.append(goal)
                 self.models.append(robot)
+                self.models.append(goal)
                 for item in box:
                     self.models.append(item)
         elif(reset == 4):
@@ -245,18 +253,32 @@ class NubotAvoidEnv(RobotGazeboEnv):
                 self.models[1] = goal
             else:
                 self.models = []
-                self.models.append(goal)
                 self.models.append(robot)
+                self.models.append(goal)
                 for item in box:
                     self.models.append(item)
         elif(reset == 3):
+            # models = []
+            # """ robot """
+            # models.append(self.Init_Robot_Pose(models))
+            # """ goal """
+            # models.append(self.Init_Goal_Pose(models))
+            # """ obstacle """
+            # self.models = self.Init_Obstacle_Pose(models)
+            
             models = []
-            """ robot """
-            models.append(self.Init_Robot_Pose(models))
-            """ goal """
-            models.append(self.Init_Goal_Pose(models))
             """ obstacle """
-            self.models = self.Init_Obstacle_Pose(models)
+            box = self.Init_Obstacle_Pose(models)
+            """ robot """
+            robot = self.Init_Robot_Pose(box)
+            """ goal """
+            goal = self.Init_Goal_Pose(box)
+            """ merge """
+            self.models = []
+            self.models.append(robot)
+            self.models.append(goal)
+            for item in box:
+                self.models.append(item)
         elif(reset == 2):
             models = []
             """ robot """
@@ -290,10 +312,10 @@ class NubotAvoidEnv(RobotGazeboEnv):
         if(state == 'random'):
             while True:
                 x,y,angle = self.Random_Pose('robot')
-                if(self.Check_Model_Overlapping([x,y],models) == False):
+                if(self.Check_Model_Overlapping([x,y],models,error = 0.7) == False):
                     self.robot['pos'] = [x,y,0.01]
-                    self.robot['ang'] = angle
-                    # self.robot['ang'] = -180.0
+                    # self.robot['ang'] = angle
+                    self.robot['ang'] = -180.0
 
                     self.init_pos[0] = x
                     self.init_pos[1] = y
@@ -335,7 +357,7 @@ class NubotAvoidEnv(RobotGazeboEnv):
             self.goal['range'] = [0.2,0.2]
             while True:
                 x,y,_ = self.Random_Pose('robot')
-                if(self.Check_Model_Overlapping([x,y],models) == False):
+                if(self.Check_Model_Overlapping([x,y],models,error = 0.7) == False):
                     self.goal['pos'] = [x,y,0.01]
 
                     print('random goal {}'.format([x,y]))
@@ -368,8 +390,8 @@ class NubotAvoidEnv(RobotGazeboEnv):
                 x,y,angle = self.Random_Pose('obstacle')
                 if(self.Check_Model_Overlapping([x,y],box) == False):
                     self.obstacles[i]['pos'] = [x,y,0.01]
-                    self.obstacles[i]['ang'] = 0
-                    # self.obstacles[i]['ang'] = angle
+                    # self.obstacles[i]['ang'] = 0
+                    self.obstacles[i]['ang'] = angle
                     
                     box.append([x,y])
 
@@ -762,28 +784,70 @@ class NubotAvoidEnv(RobotGazeboEnv):
         # return reward,info
         """ reward 4 """
         # goal
+        # rg = -0.2 + 10*(self.pre_dis-dis)
+
+        # # avoid
+        # # phi = abs(obs[4]-angle)
+        # phi = abs(angle-self.pre_front)
+        # if(phi > math.pi):
+        #     ro_a = 0.2*((v-25)/25)
+        # else:
+        #     ro_a = 0.2*((v-25)/25)+np.cos(phi)*0.3
+
+        # if(self.scan_info == 'current'):
+        #     dis_o = np.min(obs[self.robot_dim:])
+        # elif(self.scan_info == 'pre'):
+        #     dis_o = np.min(obs[self.robot_dim:-self.scan_dim])
+        # if(0.1 < dis_o <= 0.5):
+        #     ro_s = -0.1/((dis_o - 0.13)**2+1e-6)
+        # else:
+        #     ro_s = 0
+        
+        # # merge
+        # fp = min(0.1/((dis_o - 0.13)**2 +1e-6),4)
+        # fp_inv = max(min(1/(fp+1e-6),2),0.1)
+        # reward = fp_inv*rg + fp*(ro_a + ro_s)
+
+        # if(info == 'goal'):
+        #     reward = 10.
+        # elif(info == 'bump'):
+        #     reward = -10.
+        # elif(info == 'over range'):
+        #     reward = -10.
+
+        # self.pre_dis = dis
+        # self.pre_front = angle
+
+        # return reward,info
+
+        """ reward 5 """
+        # goal
         rg = -0.2 + 10*(self.pre_dis-dis)
 
         # avoid
         # phi = abs(obs[4]-angle)
         phi = abs(angle-self.pre_front)
+
+        v = min(v,70.0)
         if(phi > math.pi):
-            ro_a = 0.2*((v-25)/25)
+            ro_a = -0.25+0.15*((v-25)/35)
         else:
-            ro_a = 0.2*((v-25)/25)+np.cos(phi)*0.3
+            ro_a = -0.25+0.15*((v-25)/35)+np.cos(phi)*0.3
 
         if(self.scan_info == 'current'):
             dis_o = np.min(obs[self.robot_dim:])
         elif(self.scan_info == 'pre'):
             dis_o = np.min(obs[self.robot_dim:-self.scan_dim])
-        if(0.1 < dis_o <= 0.5):
-            ro_s = -0.1/((dis_o - 0.13)**2+1e-6)
-        else:
-            ro_s = 0
+        # if(dis_o <= 0.5):
+        #     ro_s = -0.1/((dis_o - 0.13)**2+1e-6)
+        # else:
+        #     ro_s = 0
+
+        ro_s = 0
         
         # merge
         fp = min(0.1/((dis_o - 0.13)**2 +1e-6),4)
-        fp_inv = max(min(1/(fp+1e-6),2),0.1) 
+        fp_inv = max(min(1/(fp+1e-6),2),0.1)
         reward = fp_inv*rg + fp*(ro_a + ro_s)
 
         if(info == 'goal'):
@@ -791,15 +855,12 @@ class NubotAvoidEnv(RobotGazeboEnv):
         elif(info == 'bump'):
             reward = -10.
         elif(info == 'over range'):
-            reward = -10.
+            reward = -15.
 
         self.pre_dis = dis
         self.pre_front = angle
 
         return reward,info
-
-        """ reward 5 """
-
 
         """ reward for linear yaw"""
         """ reward 1 """
@@ -846,8 +907,9 @@ class NubotAvoidEnv(RobotGazeboEnv):
 
     """ bug """
     # def Check_Model_Overlapping(self,pos,models,error = 0.70):
-    def Check_Model_Overlapping(self,pos,models,error = 0.8):
-    # def Check_Model_Overlapping(self,pos,models,error = 1.1):
+    # def Check_Model_Overlapping(self,pos,models,error = 0.8):
+    # def Check_Model_Overlapping(self,pos,models,error = 1.2):
+    def Check_Model_Overlapping(self,pos,models,error = 1.27):
         """ method 2 """
         for item in models:
             if(math.hypot(pos[0]-item[0],pos[1]-item[1]) < error):

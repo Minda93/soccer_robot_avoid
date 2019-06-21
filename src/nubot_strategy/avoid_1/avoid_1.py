@@ -53,7 +53,8 @@ class PlayGame(object):
         self.action_normalize = False
 
         # """ Set env and numpy seeds """
-        self.seed = 17
+        self.seed = 20
+        # self.seed = 15
 
         # """ buffer size """
         self.buffer_size = 1000000
@@ -69,7 +70,9 @@ class PlayGame(object):
 
         # """ How many time steps purely random policy is run for """
         # self.start_timesteps = 15000
-        self.start_timesteps = 10000
+        # self.start_timesteps = 30000
+        self.start_timesteps = 50000
+        # self.start_timesteps = 100000
         # self.start_timesteps = 256*5
         # self.start_timesteps = 0
     
@@ -77,7 +80,7 @@ class PlayGame(object):
         self.max_timesteps = 1000
 
         # Max episode to run environment for
-        self.max_episodes = 10000
+        self.max_episodes = 50000
         # self.max_episodes = 100
         # self.max_episodes = 20
 
@@ -116,16 +119,16 @@ class PlayGame(object):
         # """ file processing """
         # Load model
         if(self.load_models):
-            load_model = 'model_15'
-            seed = 6
-            load_episode = 10000
+            load_model = 'model_8'
+            seed = 98
+            load_episode = 50000
             self.load_path =  PACKAGE_PATH+\
                 "config/{}/{}/{}/".format(self.policy_name,load_model,load_episode)
 
             self.load_file_name = "{}_{}".format(self.policy_name,seed)
 
         # Save model
-        output_model = "model_16"
+        output_model = "model_9"
         self.save_path = PACKAGE_PATH+\
             "config/{}/{}/".format(self.policy_name,output_model)
 
@@ -151,7 +154,7 @@ class PlayGame(object):
         elif(a_info == 'linear'):
             self.state_dim = [r_info,s_info]
             self.action_dim = 2
-            self.action_bound = [50.0,50.0]
+            self.action_bound = [-70.0,70.0]
         elif(a_info == 'linear_yaw'):
             self.state_dim = [r_info,s_info]
             self.action_dim = 3
@@ -229,7 +232,8 @@ class PlayGame(object):
                 if(total_timesteps > self.start_timesteps):
                     action = self.policy.Select_Action(state,self.train)
                 else:
-                    action = self.policy.Select_Action(state,True)
+                    # action = self.policy.Select_Action(state,True)
+                    action = self.policy.Select_Action(state,False)
                 """ add noise """
                 if(self.expl_noise != 0):
                     noise = np.random.normal(0,self.expl_noise,size=self.action_dim)
@@ -377,7 +381,7 @@ class PlayGame(object):
     
     def Log_Show(self,episode, episode_reward, step,info):
         if(self.check_save_path):
-            with open(self.save_path+'log_show.txt','a') as f:
+            with open(self.save_path+'log_show_{}.txt'.format(self.seed),'a') as f:
                 f.write("{},{},{},{}\n".format(episode,episode_reward,step,info))
         else:
             print("not find path")

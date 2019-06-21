@@ -15,6 +15,7 @@ from std_srvs.srv import Empty,EmptyResponse
 import math
 import numpy as np
 import threading
+import pickle
 
 PACKAGE_PATH = rospkg.RosPack().get_path('nubot_strategy')+'/avoid/'
 
@@ -86,7 +87,7 @@ class Obstacle(object):
             vec = self.Move_Horizon(scalar)
         elif(self.move_way == 'rotate'):
             if(scalar > 10):
-                scalar = 10
+                scalar = 5
             vec = [0,0,scalar]
         
         self.Pub_Cmdvel(vec)
@@ -141,7 +142,7 @@ class Obstacle(object):
         return np.hypot(*(self.init_pos - self.pos))
     
 class Env(object):
-    def __init__(self,num,seed = 2):
+    def __init__(self,num,seed = 2,save_route=False):
         np.random.seed(seed)
 
         """ obstacle """
@@ -156,19 +157,41 @@ class Env(object):
         
         self.Init_Env()
 
+        """ log """
+        self.save_route = save_route
+        if(self.save_route):
+            self.log = []
+
         """ sub """
         rospy.Subscriber("gazebo/model_states",ModelStates,self.Sub_Info)
 
         """ server """
         self.reset = rospy.Service('dynamic_env/reset', Empty, self.Reset)
+        if(self.save_route):
+            self.save = rospy.Service('dynamic_env/save', Empty, self.Save)
     
     def Reset(self,req):
+        if(self.save_route):
+            choose_box = []
+
         for i in range(1,self.obstacle_num+1):
             name = 'obstacle_{}'.format(i)
             choose = np.random.randint(3213)%4
             self.obstacles[name].Reset(self.way[choose])
+            if(self.save_route):
+                choose_box.append(choose)
+
+        if(self.save_route):
+            self.log.append(choose_box)
+
         self.Init_Env()
         
+        return EmptyResponse()
+    
+    def Save(self,req):
+        with open("log_direction_show.pickle",'wb') as f:
+            pickle.dump(self.log,f)
+            print('save log')
         return EmptyResponse()
 
     def Init_Env(self):
@@ -204,7 +227,8 @@ class Env(object):
 
 def main():
     rospy.init_node('dynamic_env', anonymous=True)
-    env = Env(num = 5,seed = 0)
+    # env = Env(num = 5,seed = 0,save_route=False)
+    env = Env(num = 5,seed = 0,save_route=True)
 
     env.Start()
 

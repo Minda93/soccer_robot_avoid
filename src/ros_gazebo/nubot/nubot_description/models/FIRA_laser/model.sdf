@@ -24,7 +24,7 @@
                   <uri>file://meshes/nubot_frame_collision.dae</uri>
                </mesh> -->
                <cylinder>
-                  <radius>0.23</radius>
+                  <radius>0.20</radius>
                   <length>0.6</length>
                </cylinder>
             </geometry>
@@ -45,7 +45,8 @@
             <geometry>
                <mesh>
                   <!-- <scale>1.0 1.0 1.1</scale> -->
-                  <scale>0.001 0.001 0.001</scale>
+                  <!-- <scale>0.001 0.001 0.001</scale> -->
+                  <scale>0.0009 0.0009 0.001</scale>
                   <uri>file://meshes/nubot_frame/robot6th.stl</uri>
                   <!-- <uri>file://meshes/nubot_frame/nubot_frame1.dae</uri> -->
                </mesh>
@@ -69,7 +70,7 @@
       </joint>
       
       <link name="base_scan">
-         <pose>-0.000113 -0.003369 0.645 0 0 0</pose>
+         <pose>-0.003869 0.006836 0.645 0 0 0</pose>
 
          <collision name="box_collision">
             <geometry>

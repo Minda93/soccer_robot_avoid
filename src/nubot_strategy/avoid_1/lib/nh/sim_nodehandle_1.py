@@ -19,6 +19,8 @@ import math
 import numpy as np
 
 SCAN_LIMIT = 2.5
+# SCAN_LIMIT = 2.0
+# BUMP_LIMIT = 0.24
 BUMP_LIMIT = 0.26
 
 class SimNodeHandle(object):
@@ -101,16 +103,17 @@ class SimNodeHandle(object):
             except:
                 print("don't listen scan")
         
-        scan = []
-        for i in range(len(msg.ranges)):
-            if((i%(360/self.scan_dim)) == 0):
-                if(msg.ranges[i] == math.inf):
-                    scan.append(SCAN_LIMIT)
-                elif(msg.ranges[i] == math.isnan):
-                    scan.append(0.0)
-                else:
-                    # scan.append(msg.ranges[i])
-                    scan.append(round(msg.ranges[i],2))
+        # scan = []
+        # for i in range(len(msg.ranges)):
+        #     if((i%(360/self.scan_dim)) == 0):
+        #         if(msg.ranges[i] == math.inf):
+        #             scan.append(SCAN_LIMIT)
+        #         elif(msg.ranges[i] == math.isnan):
+        #             scan.append(0.0)
+        #         else:
+        #             # scan.append(msg.ranges[i])
+        #             scan.append(round(msg.ranges[i],2))
+        # self.__scan = np.array(scan)
 
         """ 270 """
         # scan = []
@@ -130,7 +133,22 @@ class SimNodeHandle(object):
         #         else:
         #             scan.append(round(msg.ranges[i],3))
 
-        self.__scan = np.array(scan)
+        # self.__scan = np.array(scan)
+
+        """ method 3 """
+        scan = np.ones(self.scan_dim)*SCAN_LIMIT
+        j = 0
+        for i in range(len(msg.ranges)):
+            if((i%(360/self.scan_dim)) == 0):
+                if(msg.ranges[i] == math.inf):
+                    scan[j] = SCAN_LIMIT
+                elif(msg.ranges[i] == math.isnan):
+                    scan[j] = 0.0
+                else:
+                    scan[j] = round(msg.ranges[i],2)
+                j += 1
+        self.__scan = scan
+
         if(np.amin(self.__scan) <= BUMP_LIMIT):
             self.__bumper = True
     
